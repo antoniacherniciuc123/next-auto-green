@@ -5,104 +5,93 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Next Auto Green — Calculator PRO</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- pdf.js (browser) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha512-yqX9c3cM1uO0sWwOa1l6JdEMUP+K9Qrx3gG1G8e3rKkMmk8bD3x+KQK1nK5R0mLQk1T0oL3uOeV9rV2i7N1V8Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!-- pdf.js & worker -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.worker.min.js';
+      }
+    });
+  </script>
 </head>
 <body>
-  <header>
+  <div class="wrap">
     <h1>Next Auto Green — Calculator PRO</h1>
-    <div class="badge">Curs USD→RON: <span id="curs-badge">4.35</span></div>
-  </header>
-
-  <main class="grid">
-    <!-- 1) LINK & LOCAȚIE -->
-    <section class="card">
-      <h2>1) Link licitație & deducere locație</h2>
-      <label>Link anunț (IAAI / Copart)</label>
-      <input id="linkInput" type="text" placeholder="https://www.iaai.com/VehicleDetail/..." />
-
-      <div class="row">
-        <button id="btnParse">Preia locația din link</button>
-        <div class="spacer"></div>
-        <label class="upload-label">
-          <input id="pdfInput" type="file" accept="application/pdf" hidden />
-          Încarcă PDF (tabele)
+    <div class="grid">
+      <!-- Coloana 1: link & locație -->
+      <section class="card">
+        <h2>1) Link licitație & deducere locație</h2>
+        <label>Link anunț (IAAI / Copart)
+          <input id="adUrl" type="url" placeholder="https://..." />
         </label>
-      </div>
-
-      <div class="row">
-        <div class="col">
-          <label>Platformă</label>
+        <div class="row">
+          <button id="btnScrape">Preia locația din link</button>
+          <label class="btn-like">
+            Încarcă PDF (tabele)
+            <input id="pdfInput" type="file" accept="application/pdf" hidden />
+          </label>
+        </div>
+        <label>Platformă
           <select id="platform">
             <option>IAAI</option>
             <option>Copart</option>
           </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col">
-          <label>Branch / Oraș</label>
+        </label>
+        <label>Branch / Oraș
           <input id="branch" type="text" placeholder="ex: Syracuse" />
+        </label>
+        <label>Stat (US) — 2 litere
+          <input id="state" type="text" placeholder="ex: NY" maxlength="2" />
+        </label>
+        <div class="hint" id="pdfStatus">PDF: neîncărcat</div>
+      </section>
+      <!-- Coloana 2: costuri -->
+      <section class="card">
+        <h2>2) Date costuri</h2>
+        <label>Port de plecare (SUA)
+          <select id="port"><option value="">— alege port —</option></select>
+        </label>
+        <label>Ground USA (USD) — din tabel
+          <input id="ground" type="number" placeholder="ex: 425" />
+        </label>
+        <label>Delivery to Romania (USD)
+          <input id="delivery" type="number" placeholder="1500 / 2150" />
+        </label>
+        <label>Bid (USD)
+          <input id="bid" type="number" placeholder="ex: 10000" />
+        </label>
+        <label>Bid account (USD) (implicit 250 + 250)
+          <input id="bidAcc" type="number" value="500" />
+        </label>
+        <label>THC + comisar vamal (USD)
+          <input id="thc" type="number" value="200" />
+        </label>
+        <label>Comision noi (USD)
+          <input id="comm" type="number" value="1170" />
+        </label>
+        <label>Vamă (%)
+          <input id="customs" type="number" value="10" />
+        </label>
+        <label>TVA (%)
+          <input id="vat" type="number" value="21" />
+        </label>
+      </section>
+      <!-- Coloana 3: rezultat -->
+      <section class="card">
+        <h2>Rezultat</h2>
+        <div class="totals">
+          <div><b>Total (USD):</b> <span id="totalUsd">0.00</span></div>
+          <div><b>Total (RON):</b> <span id="totalRon">0.00</span></div>
         </div>
-      </div>
-
-      <div class="row">
-        <div class="col">
-          <label>Stat (US) — 2 litere</label>
-          <input id="state" type="text" placeholder="ex: NY" />
-        </div>
-      </div>
-
-      <div class="hint" id="pdfStatus">PDF: neîncărcat</div>
-    </section>
-
-    <!-- 2) DATE COSTURI -->
-    <section class="card">
-      <h2>2) Date costuri</h2>
-
-      <label>Port de plecare (SUA)</label>
-      <select id="port">
-        <option value="">— alege port —</option>
-        <option value="New Jersey">New Jersey (NJ)</option>
-        <option value="Savannah">Savannah (GA)</option>
-        <option value="Houston">Houston (TX)</option>
-        <option value="Los Angeles">Los Angeles (CA)</option>
-      </select>
-
-      <label>Ground USA (USD) — din tabel</label>
-      <input id="ground" type="number" placeholder="ex: 425" />
-
-      <label>Delivery to Romania (USD)</label>
-      <input id="delivery" type="number" placeholder="1500 / 2150" />
-
-      <label>Bid account (USD) (implicit 250 + 250)</label>
-      <input id="bidAccount" type="number" value="500" />
-
-      <label>THC + comisar vamal (USD)</label>
-      <input id="thc" type="number" value="180" />
-
-      <label>Comision noi (USD)</label>
-      <input id="fee" type="number" value="1170" />
-
-      <label>Vamă (%)</label>
-      <input id="vama" type="number" value="10" />
-    </section>
-
-    <!-- 3) REZULTAT -->
-    <section class="card">
-      <h2>Rezultat</h2>
-      <div class="totals">
-        <div>Total (USD): <span id="total-usd">0.00</span></div>
-        <div>Total (RON): <span id="total-ron">0.00</span></div>
-      </div>
-
-      <label>Mesaj pentru client (copiabil):</label>
-      <textarea id="msg" rows="10"></textarea>
-      <button id="copyBtn">Copiază mesaj</button>
-    </section>
-  </main>
-
-  <script src="app.js"></script>
+        <label>Mesaj pentru client (copiabil):
+          <textarea id="msg" rows="8"></textarea>
+        </label>
+        <button id="btnCopy">Copiază mesaj</button>
+      </section>
+    </div>
+  </div>
+  <script src="app.js" defer></script>
 </body>
 </html>
