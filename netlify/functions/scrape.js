@@ -1,96 +1,67 @@
-// netlify/functions/scrape.js
-export default async (req) => {
+export async function handler(event) {
   try {
-    const url = new URL(req.url);
-    const target = url.searchParams.get('url');
-
-    if (!target) {
-      return json({ error: 'Missing ?url=' }, 400);
+    const url = (event.queryStringParameters || {}).url;
+    if (!url) {
+      return json(400, { error: "Missing ?url=" });
     }
 
-    // mică igienizare
-    if (!/^https?:\/\/(www\.)?(iaai|copart)\.com/i.test(target)) {
-      return json({ error: 'URL trebuie să fie de pe IAAI sau Copart' }, 400);
-    }
-
-    const res = await fetch(target, {
+    const res = await fetch(url, {
       headers: {
-        // ajută la încărcarea unei versiuni „publice” a paginii
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36',
+        "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari",
+        accept: "text/html,application/xhtml+xml",
       },
     });
 
+    if (!res.ok) {
+      return json(res.status, { error: `Fetch failed: ${res.status}` });
+    }
+
     const html = await res.text();
 
-    // --- Parsare IAAI ---
-    // Caută secțiunea "Selling Branch: Syracuse (NY)"
-    let branch = null;
-    let state = null;
-    let platform = null;
+    let branch = "";
+    let state = "";
 
-    if (/iaai/i.test(target)) {
-      platform = 'IAAI';
+    const patterns = [
+      /Selling\s*Branch[^<]*>\s*([^<(]+)\s*\((\w{2})\)/i,
+      /Selling\s*Branch[^:]*:\s*<\/[^>]+>\s*([^<(]+)\s*\((\w{2})\)/i,
+      /Selling\s*Branch[^:]*:\s*([^<(]+)\s*\((\w{2})\)/i,
+    ];
 
-      // 1) variantă cu "Selling Branch"
-      // e.g. Selling Branch: Syracuse (NY)
-      let m =
-        html.match(/Selling\s*Branch\s*:\s*([^<\n\r]+?)\s*\((\w{2})\)/i) ||
-        html.match(/Selling\s*Branch[^:]*:\s*<\/[^>]+>([^<]+)\s*\((\w{2})\)/i);
-
-      // 2) fallback: unele pagini au aria-label / dt-dd etc.
-      if (!m) {
-        m = html.match(
-          /(?:Branch|Selling\s*Branch)[^:]*:\s*<\/[^>]+>\s*([^<]+?)\s*\((\w{2})\)/i
-        );
-      }
-
+    for (const re of patterns) {
+      const m = html.match(re);
       if (m) {
         branch = m[1].trim();
         state = m[2].trim().toUpperCase();
+        break;
       }
     }
 
-    // --- Parsare Copart ---
-    if (!branch && /copart/i.test(target)) {
-      platform = 'Copart';
-
-      // Copart are multe variante; încercăm câteva tipare comune
-      // ex: "Sale Location: Syracuse, NY"
-      let m =
-        html.match(/Sale\s*Location\s*:\s*([^,<\n\r]+)\s*,\s*(\w{2})/i) ||
-        html.match(/Location\s*:\s*([^,<\n\r]+)\s*,\s*(\w{2})/i);
-
+    if (!state) {
+      const m = html.match(/\b([A-Z][A-Za-z .'-]+)\s*\((?:US-)?([A-Z]{2})\)/);
       if (m) {
         branch = m[1].trim();
-        state = m[2].trim().toUpperCase();
+        state = m[2].toUpperCase();
       }
     }
 
-    if (!branch || !state) {
-      return json(
-        {
-          error:
-            'Nu am reușit să extrag Branch/State din pagină. Verifică linkul sau încearcă altul.',
-        },
-        422
-      );
+    if (!state) {
+      return json(422, { error: "Nu am putut găsi Selling Branch în pagină." });
     }
 
-    return json({ platform, branch, state });
-  } catch (e) {
-    return json({ error: e.message || String(e) }, 500);
+    return json(200, { branch, state });
+  } catch (err) {
+    return json(500, { error: String(err) });
   }
-};
+}
 
-// utilitar răspuns JSON + CORS
-function json(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
+function json(status, body) {
+  return {
+    statusCode: status,
     headers: {
-      'content-type': 'application/json; charset=utf-8',
-      'access-control-allow-origin': '*',
-      'cache-control': 'no-store',
+      "content-type": "application/json; charset=utf-8",
+      "access-control-allow-origin": "*",
     },
-  });
+    body: JSON.stringify(body),
+  };
 }
