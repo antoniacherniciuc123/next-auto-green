@@ -2,10 +2,11 @@
   publish = "."
   functions = "netlify/functions"
 
+# Specificăm bundlerul Node pentru funcțiile Netlify
 [functions]
   node_bundler = "esbuild"
 
-# antetul se aplică DOAR pe funcțiile serverless
+# Antet CORS aplicat doar pe funcțiile serverless
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
