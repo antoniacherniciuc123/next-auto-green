@@ -1,278 +1,233 @@
-/* ======================== UTIL ======================== */
-const $ = (sel) => document.querySelector(sel);
-const fmt = (n) => (Number(n || 0)).toFixed(2);
+// app.js
 
-const PORTS_EAST = ["New Jersey", "Savannah"];
-const PORTS_WEST = ["Houston", "Los Angeles"];
+// elemente
+const el = {
+  adUrl:    document.getElementById('adUrl'),
+  btnScrape:document.getElementById('btnScrape'),
+  pdfInput: document.getElementById('pdfInput'),
+  pdfStatus:document.getElementById('pdfStatus'),
 
-/* Curs fix cerut: 4.35 */
-const CURS = 4.35;
-$("#curs-badge").textContent = CURS.toFixed(2);
+  platform: document.getElementById('platform'),
+  branch:   document.getElementById('branch'),
+  state:    document.getElementById('state'),
 
-/* Elemente UI */
-const linkInput   = $("#linkInput");
-const btnParse    = $("#btnParse");
-const pdfInput    = $("#pdfInput");
-const pdfStatus   = $("#pdfStatus");
+  port:     document.getElementById('port'),
+  ground:   document.getElementById('ground'),
+  delivery: document.getElementById('delivery'),
 
-const platformSel = $("#platform");
-const branchInput = $("#branch");
-const stateInput  = $("#state");
+  bid:      document.getElementById('bid'),
+  bidAcc:   document.getElementById('bidAcc'),
+  thc:      document.getElementById('thc'),
+  comm:     document.getElementById('comm'),
+  customs:  document.getElementById('customs'),
+  vat:      document.getElementById('vat'),
 
-const portSel     = $("#port");
-const groundInput = $("#ground");
-const deliveryInp = $("#delivery");
+  totalUsd: document.getElementById('totalUsd'),
+  totalRon: document.getElementById('totalRon'),
+  msg:      document.getElementById('msg'),
+  btnCopy:  document.getElementById('btnCopy')
+};
 
-const bidAccInp   = $("#bidAccount");
-const thcInp      = $("#thc");
-const feeInp      = $("#fee");
-const vamaInp     = $("#vama");
+// curs fix
+const FX = 4.35;
 
-const totalUsdEl  = $("#total-usd");
-const totalRonEl  = $("#total-ron");
-const msgTextarea = $("#msg");
-const copyBtn     = $("#copyBtn");
+// mapă completă { "City, ST": { NJ: x, GA: y, TX: z, CA: m, WA: n } }
+let groundMap = null;
 
-/* ===================== GROUND MAP ===================== */
-/** Mapă completă: groundMap[state][city] = { port, ground } */
-let groundMap = loadMapFromLocal();
+// porturi definite şi zona (Est/Vest) pentru Delivery
+const PORTS = [
+  { key: 'NJ', label: 'New Jersey (NJ)', zone: 'E' },
+  { key: 'GA', label: 'Savannah (GA)',  zone: 'E' },
+  { key: 'TX', label: 'Houston (TX)',   zone: 'E' },
+  { key: 'CA', label: 'Los Angeles (CA)', zone:'W' },
+  { key: 'WA', label: 'Seattle (WA)',   zone: 'W' }
+];
 
-function loadMapFromLocal() {
-  try {
-    const raw = localStorage.getItem("groundMap");
-    if (!raw) return {};
-    return JSON.parse(raw);
-  } catch (_) { return {}; }
+function setDeliveryByPortKey(k) {
+  const port = PORTS.find(p => p.key === k);
+  if (!port) return;
+  el.delivery.value = port.zone === 'W' ? 2150 : 1500;
 }
 
-function saveMapToLocal() {
-  localStorage.setItem("groundMap", JSON.stringify(groundMap));
-  updatePdfStatus();
-}
-
-function updatePdfStatus() {
-  const countStates = Object.keys(groundMap).length;
-  pdfStatus.textContent = countStates ? `PDF: încărcat (state: ${countStates})` : "PDF: neîncărcat";
-}
-
-/* ======== Heuristic fallback când nu avem din PDF ======== */
-function fallbackPortByState(state) {
-  const WEST = new Set(["CA","OR","WA","NV","AZ","UT","ID","NM","CO","WY","MT","AK","HI"]);
-  const HOU  = new Set(["TX","OK"]);
-  const SAVA = new Set(["GA","FL","AL","SC","NC","TN","MS"]);
-  if (WEST.has(state)) return "Los Angeles";
-  if (HOU.has(state))  return "Houston";
-  if (SAVA.has(state)) return "Savannah";
-  return "New Jersey";
-}
-
-function deliveryByPort(port) {
-  if (PORTS_EAST.includes(port)) return 1500;
-  if (PORTS_WEST.includes(port)) return 2150;
-  // default Est
-  return 1500;
-}
-
-/* =============== PDF PARSING (pdf.js) ===================
-   Strategia:
-   - extragem textul brut din fiecare pagină
-   - detectăm blocuri pe secțiuni de stat (titluri precum "Wisconsin", "Washington" etc.)
-   - detectăm rânduri (oraș + port + ground)
-   - construim groundMap[state][city] = { port, ground }
-   NOTE: PDF-urile cu tabele variază; acest parser e tolerant:
-   - caută pattern-uri "ORAȘ  STATE  -> PORT  PRICE" ca text concatenat pe rând
-   - portul e valid doar dacă e în setul nostru
-   - cifra 'ground' e ultimul număr din rând
-*/
-async function parsePdfAndBuildMap(file) {
-  const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-
-  const portsCanon = new Set(["NEW JERSEY","SAVANNAH","HOUSTON","LOS ANGELES"]);
-  const pagesText = [];
-
-  for (let p = 1; p <= pdf.numPages; p++) {
-    const page = await pdf.getPage(p);
-    const content = await page.getTextContent();
-    const text = content.items.map(it => it.str).join(" ").replace(/\s+/g, " ").trim();
-    pagesText.push(text);
-  }
-
-  const all = pagesText.join("\n");
-
-  // Heuristică: împărțim după numele statelor (majuscule și nume comune)
-  // Vom folosi lista standard US states; parserul prinde block-uri pe " STATE " ca delimitator
-  const US_STATES = [
-    "ALABAMA","ALASKA","ARIZONA","ARKANSAS","CALIFORNIA","COLORADO","CONNECTICUT","DELAWARE","FLORIDA","GEORGIA","HAWAII","IDAHO","ILLINOIS","INDIANA","IOWA","KANSAS","KENTUCKY","LOUISIANA","MAINE","MARYLAND","MASSACHUSETTS","MICHIGAN","MINNESOTA","MISSISSIPPI","MISSOURI","MONTANA","NEBRASKA","NEVADA","NEW HAMPSHIRE","NEW JERSEY","NEW MEXICO","NEW YORK","NORTH CAROLINA","NORTH DAKOTA","OHIO","OKLAHOMA","OREGON","PENNSYLVANIA","RHODE ISLAND","SOUTH CAROLINA","SOUTH DAKOTA","TENNESSEE","TEXAS","UTAH","VERMONT","VIRGINIA","WASHINGTON","WEST VIRGINIA","WISCONSIN","WYOMING"
-  ];
-
-  // Construim regex pentru a tăia în blocuri de stat
-  const stateRegex = new RegExp(`\\b(${US_STATES.join("|")})\\b`, "g");
-  const blocks = [];
-  let match, lastIdx = 0, lastState = null;
-
-  while ((match = stateRegex.exec(all)) !== null) {
-    if (lastState) {
-      blocks.push({ state: lastState, text: all.slice(lastIdx, match.index) });
-    }
-    lastState = match[1];
-    lastIdx = match.index + match[0].length;
-  }
-  if (lastState) blocks.push({ state: lastState, text: all.slice(lastIdx) });
-
-  let newMap = {};
-  const pushRow = (st2, city, port, ground) => {
-    if (!st2 || !city || !port || ground == null) return;
-    if (!newMap[st2]) newMap[st2] = {};
-    if (!newMap[st2][city]) newMap[st2][city] = { port, ground };
-  };
-
-  // Normalizări
-  const normPort = (s) => s.toUpperCase().replace(/[^A-Z ]/g,"").trim();
-  const to2 = (stateFull) => {
-    // mică hartă full->2 litere
-    const m = {
-      "ALABAMA":"AL","ALASKA":"AK","ARIZONA":"AZ","ARKANSAS":"AR","CALIFORNIA":"CA","COLORADO":"CO","CONNECTICUT":"CT","DELAWARE":"DE","FLORIDA":"FL","GEORGIA":"GA","HAWAII":"HI","IDAHO":"ID","ILLINOIS":"IL","INDIANA":"IN","IOWA":"IA","KANSAS":"KS","KENTUCKY":"KY","LOUISIANA":"LA","MAINE":"ME","MARYLAND":"MD","MASSACHUSETTS":"MA","MICHIGAN":"MI","MINNESOTA":"MN","MISSISSIPPI":"MS","MISSOURI":"MO","MONTANA":"MT","NEBRASKA":"NE","NEVADA":"NV","NEW HAMPSHIRE":"NH","NEW JERSEY":"NJ","NEW MEXICO":"NM","NEW YORK":"NY","NORTH CAROLINA":"NC","NORTH DAKOTA":"ND","OHIO":"OH","OKLAHOMA":"OK","OREGON":"OR","PENNSYLVANIA":"PA","RHODE ISLAND":"RI","SOUTH CAROLINA":"SC","SOUTH DAKOTA":"SD","TENNESSEE":"TN","TEXAS":"TX","UTAH":"UT","VERMONT":"VT","VIRGINIA":"VA","WASHINGTON":"WA","WEST VIRGINIA":"WV","WISCONSIN":"WI","WYOMING":"WY"
-    };
-    return m[stateFull] || null;
-  };
-
-  // În fiecare block, căutăm rânduri de forma:
-  //  <Oraș> ... <PORT> ... <număr (ground)>
-  blocks.forEach(b => {
-    const st2 = to2(b.state);
-    if (!st2) return;
-
-    // rupem textul în pseudo-rânduri
-    const lines = b.text.split(/(?:(?:IAAI|Copart)\s+)?/i).join(" ").split(/\s{2,}| \| /);
-
-    for (let raw of lines) {
-      const line = raw.replace(/\s+/g, " ").trim();
-      if (!line) continue;
-
-      // extrage ultimul număr ca ground
-      const mNum = line.match(/(\d{2,4})(?!.*\d)/);
-      if (!mNum) continue;
-      const ground = Number(mNum[1]);
-
-      // caută un port valid în linie
-      const mPort = [...portsCanon].find(p => line.toUpperCase().includes(p));
-      if (!mPort) continue;
-
-      // orașul = începutul liniei până la port (tăiem numărul de la final)
-      let cityPart = line.toUpperCase().split(mPort)[0].trim().replace(/\d+$/,'').trim();
-      // curățări comune
-      cityPart = cityPart.replace(/^[\-\–\|]+/,'').replace(/[^A-Z \-]/g,'').trim();
-      // oraș în format normalizat (prima literă mare)
-      const city = cityPart.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/\s+/g," ").trim();
-      if (!city) continue;
-
-      // mapăm port
-      let port = "New Jersey";
-      if (mPort.includes("SAVANNAH")) port = "Savannah";
-      else if (mPort.includes("HOUSTON")) port = "Houston";
-      else if (mPort.includes("LOS ANGELES")) port = "Los Angeles";
-
-      pushRow(st2, city, port, ground);
+function fillPortOptionsFor(cityKey) {
+  el.port.innerHTML = '<option value="">— alege port —</option>';
+  if (!groundMap || !groundMap[cityKey]) return;
+  const row = groundMap[cityKey];
+  PORTS.forEach(p => {
+    const v = row[p.key];
+    if (v && !isNaN(v)) {
+      const opt = document.createElement('option');
+      opt.value = p.key;
+      opt.textContent = `${p.label} — ${v} USD`;
+      el.port.appendChild(opt);
     }
   });
-
-  // combinăm cu ce aveam (nu ștergem intrările vechi dacă apar)
-  groundMap = Object.assign({}, groundMap, newMap);
-  saveMapToLocal();
 }
 
-/* ==================== AUTOCOMPLETE ==================== */
-async function handleParseLink() {
-  const url = linkInput.value.trim();
-  if (!url) return alert("Pune linkul de anunț.");
-
-  try {
-    const res = await fetch("/.netlify/functions/scrape", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ url })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-
-    const city = (data.city || "").replace(/["”]/g,"").trim();
-    const state = (data.state || "").trim().toUpperCase();
-
-    branchInput.value = city;
-    stateInput.value  = state;
-
-    autoFillFromMap(city, state);
-    recalcTotals();
-  } catch (e) {
-    alert("Eroare: " + e.message);
-  }
+function updateGroundFromPort(cityKey) {
+  const pk = el.port.value;
+  if (!pk || !groundMap || !groundMap[cityKey]) return;
+  const row = groundMap[cityKey];
+  if (row[pk]) el.ground.value = row[pk];
+  setDeliveryByPortKey(pk);
+  compute();
 }
 
-function autoFillFromMap(city, state) {
-  const st = (state || "").toUpperCase();
-  const cty = (city || "").trim();
+function compute() {
+  // citim valori
+  const bid    = Number(el.bid.value    || 0);
+  const ground = Number(el.ground.value || 0);
+  const del    = Number(el.delivery.value || 0);
+  const bidAcc = Number(el.bidAcc.value || 0);
+  const thc    = Number(el.thc.value    || 0);
+  const comm   = Number(el.comm.value   || 0);
 
-  let port = "";
-  let ground = "";
+  const customPct = Number(el.customs.value || 0) / 100;
+  const vatPct    = Number(el.vat.value     || 0) / 100;
 
-  if (groundMap[st] && groundMap[st][cty]) {
-    port   = groundMap[st][cty].port;
-    ground = groundMap[st][cty].ground;
-  } else {
-    // fallback din stat
-    port   = fallbackPortByState(st);
-    ground = ""; // necunoscut până nu e în PDF
-  }
+  // subtotal
+  const subtotal = bid + ground + del + bidAcc + thc + comm;
+  const vama  = subtotal * customPct;
+  const baza  = subtotal + vama;
+  const tva   = baza * vatPct;
+  const total = subtotal + vama + tva;
 
-  portSel.value     = port || "";
-  groundInput.value = ground || "";
-  deliveryInp.value = deliveryByPort(port);
-}
+  el.totalUsd.textContent = total.toFixed(2);
+  el.totalRon.textContent = (total * FX).toFixed(2);
 
-function recalcTotals() {
-  // SUMĂ = BidAccount + THC + Fee + Ground + Delivery (fără vamă; dacă vrei, poți include)
-  const vals = [bidAccInp, thcInp, feeInp, groundInput, deliveryInp].map(i => Number(i.value||0));
-  const subtotal = vals.reduce((a,b)=>a+b,0);
-
-  totalUsdEl.textContent = fmt(subtotal);
-  totalRonEl.textContent = fmt(subtotal * CURS);
-
-  const city = branchInput.value || "";
-  const st   = (stateInput.value || "").toUpperCase();
-  const port = portSel.value || "";
-  const txtLines = [
+  // mesaj
+  const city = (el.branch.value || '').trim();
+  const st   = (el.state.value  || '').trim().toUpperCase();
+  const pk   = el.port.value;
+  const portLabel = PORTS.find(p => p.key === pk)?.label || '';
+  const lines = [
     `Branch: "${city}" (${st})`,
-    `Port: ${port || "-"}`,
-    `Ground: ${fmt(groundInput.value||0)} USD`,
-    `Delivery: ${fmt(deliveryInp.value||0)} USD`,
-    `TOTAL: ${fmt(subtotal)} USD (${fmt(subtotal*CURS)} RON)`
+    `Port: ${portLabel || '-'}`,
+    `Ground: ${ground.toFixed(0)} USD`,
+    `Delivery: ${del.toFixed(0)} USD`,
+    `Bid: ${bid.toFixed(0)} USD`,
+    `Bid account: ${bidAcc.toFixed(0)} USD`,
+    `THC + comisar: ${thc.toFixed(0)} USD`,
+    `Comision noi: ${comm.toFixed(0)} USD`,
+    `Vamă 10%: ${vama.toFixed(0)} USD`,
+    `TVA 21%: ${(tva).toFixed(0)} USD`,
+    `TOTAL: ${total.toFixed(2)} USD (~${(total*FX).toFixed(2)} RON la curs ${FX})`
   ];
-  msgTextarea.value = txtLines.join("\n");
+  el.msg.value = lines.join('\n');
 }
 
-/* ===================== EVENTS ===================== */
-btnParse.addEventListener("click", handleParseLink);
-[portSel, groundInput, deliveryInp, bidAccInp, thcInp, feeInp, vamaInp].forEach(el => {
-  el.addEventListener("input", recalcTotals);
-});
-copyBtn.addEventListener("click", () => {
-  msgTextarea.select();
-  document.execCommand("copy");
-});
+// încercăm autocompletarea după ce avem branch/state
+function tryAutoPortGround() {
+  const city = (el.branch.value || '').trim();
+  const st   = (el.state.value || '').trim().toUpperCase();
+  if (!city || !st || !groundMap) return;
+  const key = `${city}, ${st}`;
+  if (!groundMap[key]) return;
 
-pdfInput.addEventListener("change", async (ev) => {
-  const f = ev.target.files?.[0];
-  if (!f) return;
-  pdfStatus.textContent = "PDF: se procesează…";
+  fillPortOptionsFor(key);
+  const row = groundMap[key];
+  // default: cel mai mic cost
+  let bestKey = null, bestVal = Infinity;
+  Object.entries(row).forEach(([k,v]) => {
+    if (v && v < bestVal) { bestVal = v; bestKey = k; }
+  });
+  if (bestKey) {
+    el.port.value = bestKey;
+    updateGroundFromPort(key);
+  }
+}
+
+// Scrape locatia din link
+el.btnScrape.addEventListener('click', async () => {
+  const url = (el.adUrl.value || '').trim();
+  if (!url) { alert('Pune link-ul IAAI/Copart.'); return; }
   try {
-    await parsePdfAndBuildMap(f);
-    alert("Tabelele au fost încărcate și salvate. Autocompletarea se face din PDF.");
+    const r = await fetch(`/.netlify/functions/scrape?url=${encodeURIComponent(url)}`);
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || 'Eroare funcție');
+    el.branch.value = data.branch;
+    el.state.value  = data.state;
+    tryAutoPortGround();
+    compute();
   } catch (e) {
-    alert("Nu am reușit să extrag tabelele: " + e.message);
-  } finally {
-    updatePdfStatus();
+    alert('Eroare: ' + e.message);
   }
 });
 
-updatePdfStatus();
+// Upload PDF -> parse tabele
+el.pdfInput.addEventListener('change', async (ev) => {
+  const file = ev.target.files?.[0];
+  if (!file) return;
+  el.pdfStatus.textContent = 'PDF: se procesează…';
+  try {
+    if (!window.pdfjsLib) throw new Error('pdfjsLib nu este încărcat.');
+    const buf = await file.arrayBuffer();
+    const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+
+    const entries = [];
+    for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
+      const page = await doc.getPage(pageNum);
+      const content = await page.getTextContent();
+      const text = content.items.map(i => i.str).join(' ');
+
+      // extrage pattern-uri
+      const re1 = /([A-Z][A-Za-z.'\-\s]+)\s+([A-Z]{2})\s+([0-9]{2,4})\s+([0-9]{2,4})\s+([0-9]{2,4})\s+([0-9]{2,4})(?:\s+([0-9]{2,4}))?/g;
+      const re2 = /([A-Z][A-Za-z.'\-\s]+)\s+([A-Z]{2})\s+—?\s*NJ:? ?([0-9]{2,4})\s+GA:? ?([0-9]{2,4})\s+TX:? ?([0-9]{2,4})\s+CA:? ?([0-9]{2,4})(?:\s+WA:? ?([0-9]{2,4}))?/g;
+      const push = (m) => {
+        const city = (m[1] || '').trim();
+        const st   = (m[2] || '').trim().toUpperCase();
+        const NJ = m[3] ? Number(m[3]) : undefined;
+        const GA = m[4] ? Number(m[4]) : undefined;
+        const TX = m[5] ? Number(m[5]) : undefined;
+        const CA = m[6] ? Number(m[6]) : undefined;
+        const WA = m[7] ? Number(m[7]) : undefined;
+        if (city && st) entries.push({ city, st, NJ, GA, TX, CA, WA });
+      };
+      let m;
+      while ((m = re1.exec(text)) !== null) push(m);
+      while ((m = re2.exec(text)) !== null) push(m);
+    }
+    // construim map
+    groundMap = {};
+    entries.forEach(e => {
+      const key = `${e.city}, ${e.st}`;
+      groundMap[key] = { NJ:e.NJ, GA:e.GA, TX:e.TX, CA:e.CA, WA:e.WA };
+    });
+    // salvăm în localStorage
+    localStorage.setItem('groundMapCache', JSON.stringify(groundMap));
+    el.pdfStatus.textContent = `PDF: încărcat ✓`;
+    tryAutoPortGround();
+    compute();
+  } catch (e) {
+    el.pdfStatus.textContent = 'PDF: eroare';
+    alert(`Eroare PDF: ${e.message}`);
+  }
+});
+
+// încercăm să încărcăm map-ul din cache la pornire
+(() => {
+  try {
+    const raw = localStorage.getItem('groundMapCache');
+    if (raw) {
+      groundMap = JSON.parse(raw);
+      el.pdfStatus.textContent = 'PDF: încărcat din cache ✓';
+    }
+  } catch {}
+})();
+
+// recalcul la input-uri
+['input','change'].forEach(evt => {
+  [el.bid, el.ground, el.delivery, el.bidAcc, el.thc, el.comm, el.customs, el.vat].forEach(elm => {
+    elm.addEventListener(evt, compute);
+  });
+});
+el.port.addEventListener('change', () => {
+  const key = `${(el.branch.value||'').trim()}, ${(el.state.value||'').trim().toUpperCase()}`;
+  updateGroundFromPort(key);
+});
+el.btnCopy.addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(el.msg.value); } catch {}
+});
+
+// calcul iniţial
+compute();
