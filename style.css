@@ -1,51 +1,67 @@
-body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(#1d3c4d, #274d60);
-  color: white;
-  margin: 0;
-  padding: 20px;
+:root{
+  --bg:#0e2a36;
+  --card:#173747;
+  --text:#e9f1f4;
+  --muted:#97b5bf;
+  --accent:#1e8fff;
+  --accent-2:#0fd195;
 }
 
-h1 {
-  text-align: center;
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+  background:linear-gradient(180deg,#0e2a36,#0b2230);
 }
 
-.container {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
+header{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:24px 28px;
+}
+h1{margin:0; font-size:28px; letter-spacing:.3px}
+.badge{
+  background:#0b2c3a;
+  padding:8px 12px; border-radius:999px;
+  border:1px solid #17455a;
 }
 
-.box {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 20px;
-  border-radius: 8px;
-  flex: 1;
+.grid{
+  display:grid; gap:24px;
+  grid-template-columns:repeat(12,1fr);
+  padding:0 28px 32px;
 }
+.card{
+  background:var(--card);
+  border:1px solid #204b60;
+  border-radius:14px;
+  padding:18px 18px 20px;
+  grid-column:span 4;
+  box-shadow:0 8px 24px rgba(0,0,0,.25);
+}
+.card h2{margin:0 0 12px 0; font-size:20px}
+label{display:block; margin:12px 2px 8px; color:var(--muted); font-size:14px}
 
-label {
-  display: block;
-  margin-top: 10px;
+input,select,button,textarea{
+  width:100%; padding:12px 12px;
+  border-radius:10px; border:1px solid #2a5f77;
+  background:#0c2b38; color:var(--text);
+  outline:none; font-size:15px;
 }
-
-input, select, textarea, button {
-  width: 100%;
-  margin-top: 5px;
-  padding: 8px;
-  border-radius: 5px;
-  border: none;
+textarea{resize:vertical; min-height:120px}
+button{cursor:pointer; border:1px solid #2a71c4; background:#1358a6}
+button:hover{filter:brightness(1.07)}
+.row{display:flex; gap:12px; align-items:center}
+.col{flex:1}
+.spacer{flex:1}
+.upload-label{
+  display:inline-flex; align-items:center; gap:8px;
+  border:1px dashed #2a5f77; color:#bce6ff; padding:10px 14px; border-radius:10px;
+  cursor:pointer;
 }
-
-button {
-  background: #1e90ff;
-  color: white;
-  cursor: pointer;
-}
-
-button:disabled {
-  background: gray;
-}
-
-textarea {
-  height: 120px;
-}
+.hint{margin-top:8px; color:#9ad0df; font-size:13px}
+.totals{display:flex; gap:24px; margin:12px 0 14px}
+#msg{margin:8px 0 10px}
+@media(max-width:1200px){ .card{grid-column:span 6} }
+@media(max-width:780px){ .card{grid-column:span 12} header{flex-direction:column; gap:12px} }

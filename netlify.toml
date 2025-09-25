@@ -3,7 +3,6 @@
   functions = "netlify/functions"
 
 [[headers]]
-  for = "/.netlify/functions/*"
+  for = "/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
-    Content-Type = "application/json; charset=utf-8"

@@ -1,73 +1,107 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ro">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Next Auto Green — Calculator PRO</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
+  <!-- pdf.js (browser) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha512-yqX9c3cM1uO0sWwOa1l6JdEMUP+K9Qrx3gG1G8e3rKkMmk8bD3x+KQK1nK5R0mLQk1T0oL3uOeV9rV2i7N1V8Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
-  <h1>Next Auto Green — Calculator PRO</h1>
+  <header>
+    <h1>Next Auto Green — Calculator PRO</h1>
+    <div class="badge">Curs USD→RON: <span id="curs-badge">4.35</span></div>
+  </header>
 
-  <div class="container">
-    <div class="box">
+  <main class="grid">
+    <!-- 1) LINK & LOCAȚIE -->
+    <section class="card">
       <h2>1) Link licitație & deducere locație</h2>
       <label>Link anunț (IAAI / Copart)</label>
-      <input id="link" type="text" placeholder="https://...">
-      <button id="btn">Preia locația din link</button>
-      <br><br>
-      <label>Platformă</label>
-      <select id="platform">
-        <option value="IAAI">IAAI</option>
-        <option value="Copart">Copart</option>
-      </select>
-      <br>
-      <label>Branch / Oraș</label>
-      <input id="branch" type="text">
-      <br>
-      <label>Stat (US) — 2 litere</label>
-      <input id="state" type="text">
-    </div>
+      <input id="linkInput" type="text" placeholder="https://www.iaai.com/VehicleDetail/..." />
 
-    <div class="box">
+      <div class="row">
+        <button id="btnParse">Preia locația din link</button>
+        <div class="spacer"></div>
+        <label class="upload-label">
+          <input id="pdfInput" type="file" accept="application/pdf" hidden />
+          Încarcă PDF (tabele)
+        </label>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label>Platformă</label>
+          <select id="platform">
+            <option>IAAI</option>
+            <option>Copart</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label>Branch / Oraș</label>
+          <input id="branch" type="text" placeholder="ex: Syracuse" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <label>Stat (US) — 2 litere</label>
+          <input id="state" type="text" placeholder="ex: NY" />
+        </div>
+      </div>
+
+      <div class="hint" id="pdfStatus">PDF: neîncărcat</div>
+    </section>
+
+    <!-- 2) DATE COSTURI -->
+    <section class="card">
       <h2>2) Date costuri</h2>
+
       <label>Port de plecare (SUA)</label>
       <select id="port">
-        <option value="">-- alege port --</option>
-        <option>New Jersey (NJ)</option>
-        <option>Savannah (GA)</option>
-        <option>Houston (TX)</option>
-        <option>Los Angeles (CA)</option>
-        <option>Seattle (WA)</option>
+        <option value="">— alege port —</option>
+        <option value="New Jersey">New Jersey (NJ)</option>
+        <option value="Savannah">Savannah (GA)</option>
+        <option value="Houston">Houston (TX)</option>
+        <option value="Los Angeles">Los Angeles (CA)</option>
       </select>
-      <br>
-      <label>Ground USA (USD)</label>
-      <input id="ground" type="number">
-      <br>
-      <label>Delivery to Romania (USD)</label>
-      <input id="delivery" type="number">
-      <br>
-      <label>Bid account (USD)</label>
-      <input id="bid" type="number" value="500">
-      <br>
-      <label>THC + comisar vamal (USD)</label>
-      <input id="thc" type="number" value="180">
-      <br>
-      <label>Comision noi (USD)</label>
-      <input id="comision" type="number" value="1170">
-      <br>
-      <label>Vamă (%)</label>
-      <input id="vama" type="number" value="10">
-    </div>
 
-    <div class="box">
+      <label>Ground USA (USD) — din tabel</label>
+      <input id="ground" type="number" placeholder="ex: 425" />
+
+      <label>Delivery to Romania (USD)</label>
+      <input id="delivery" type="number" placeholder="1500 / 2150" />
+
+      <label>Bid account (USD) (implicit 250 + 250)</label>
+      <input id="bidAccount" type="number" value="500" />
+
+      <label>THC + comisar vamal (USD)</label>
+      <input id="thc" type="number" value="180" />
+
+      <label>Comision noi (USD)</label>
+      <input id="fee" type="number" value="1170" />
+
+      <label>Vamă (%)</label>
+      <input id="vama" type="number" value="10" />
+    </section>
+
+    <!-- 3) REZULTAT -->
+    <section class="card">
       <h2>Rezultat</h2>
-      <p>Total (USD): <span id="total_usd">0.00</span></p>
-      <p>Total (RON): <span id="total_ron">0.00</span></p>
-      <label>Mesaj pentru client:</label>
-      <textarea id="msg"></textarea>
-      <button id="copy">Copiază mesaj</button>
-    </div>
-  </div>
+      <div class="totals">
+        <div>Total (USD): <span id="total-usd">0.00</span></div>
+        <div>Total (RON): <span id="total-ron">0.00</span></div>
+      </div>
+
+      <label>Mesaj pentru client (copiabil):</label>
+      <textarea id="msg" rows="10"></textarea>
+      <button id="copyBtn">Copiază mesaj</button>
+    </section>
+  </main>
 
   <script src="app.js"></script>
 </body>
