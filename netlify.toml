@@ -2,10 +2,10 @@
   publish = "."
   functions = "netlify/functions"
 
-# Specificăm un bundler modern şi eliminăm antetul global
 [functions]
   node_bundler = "esbuild"
 
+# antetul se aplică DOAR pe funcțiile serverless
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
