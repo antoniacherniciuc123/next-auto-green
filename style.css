@@ -1,19 +1,96 @@
-body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
-  color: white;
-  text-align: center;
+:root {
+  --bg: #0e2a36;
+  --card: #123949;
+  --text: #f1f7fa;
+  --muted: #a7c1cb;
+  --accent: #2ea0ff;
 }
 
-.container {
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: linear-gradient(#0b2a3a, #0f2430);
+  color: var(--text);
+  font: 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.topbar {
   display: flex;
-  justify-content: space-around;
-  padding: 20px;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px clamp(16px, 5vw, 48px);
+}
+.topbar h1 { margin: 0; font-weight: 700; }
+.badge {
+  background: var(--accent);
+  color: #041521;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-weight: 700;
 }
 
-.form-section, .result-section {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 20px;
-  border-radius: 12px;
-  width: 30%;
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 0 clamp(16px, 5vw, 48px) 40px;
+}
+@media (max-width: 1100px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid #1f4e60;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.25);
+}
+.card h2 { margin: 0 0 14px; }
+
+.row { display: grid; gap: 12px; margin: 10px 0; }
+.row.2col { grid-template-columns: repeat(2, 1fr); }
+.row.3col { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 900px){
+  .row.2col, .row.3col { grid-template-columns: 1fr; }
+}
+
+label { color: var(--muted); font-size: 0.9rem; }
+input, select, textarea, button {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #2a5e74;
+  padding: 10px 12px;
+  background: #0f2d3a;
+  color: var(--text);
+}
+button {
+  background: var(--accent);
+  border: none;
+  color: #041521;
+  font-weight: 700;
+  cursor: pointer;
+}
+button:hover { filter: brightness(1.07); }
+
+.result {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 10px 0 14px;
+}
+.result div {
+  background: #0e2f3c;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #225365;
+}
+
+.footnote {
+  color: var(--muted);
+  text-align: center;
+  padding: 18px clamp(16px, 5vw, 48px) 40px;
+  border-top: 1px solid #163d4b;
 }
