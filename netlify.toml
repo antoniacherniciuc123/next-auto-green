@@ -2,11 +2,12 @@
   publish = "."
   functions = "netlify/functions"
 
+# Specificăm un bundler modern şi eliminăm antetul global
 [functions]
   node_bundler = "esbuild"
 
 [[headers]]
-  for = "/*"
+  for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Content-Type = "application/json; charset=utf-8"
