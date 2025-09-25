@@ -1,120 +1,74 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ro">
-  <head>
-    <meta charset="utf-8" />
-    <title>Next Auto Green — Calculator PRO</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <header class="topbar">
-      <h1>Next Auto Green — Calculator PRO</h1>
-      <div class="badge">Curs USD→RON: 4.35</div>
-    </header>
+<head>
+  <meta charset="UTF-8">
+  <title>Next Auto Green — Calculator PRO</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Next Auto Green — Calculator PRO</h1>
 
-    <main class="grid">
-      <!-- 1) LINK & LOCALIZARE -->
-      <section class="card">
-        <h2>1) Link licitație & deducere locație</h2>
-        <div class="row">
-          <label>Link anunț (IAAI / Copart)</label>
-          <input id="url" type="url" placeholder="https://www.iaai.com/VehicleDetail/..." />
-          <button id="grab">Preia locația din link</button>
-        </div>
+  <div class="container">
+    <div class="box">
+      <h2>1) Link licitație & deducere locație</h2>
+      <label>Link anunț (IAAI / Copart)</label>
+      <input id="link" type="text" placeholder="https://...">
+      <button id="btn">Preia locația din link</button>
+      <br><br>
+      <label>Platformă</label>
+      <select id="platform">
+        <option value="IAAI">IAAI</option>
+        <option value="Copart">Copart</option>
+      </select>
+      <br>
+      <label>Branch / Oraș</label>
+      <input id="branch" type="text">
+      <br>
+      <label>Stat (US) — 2 litere</label>
+      <input id="state" type="text">
+    </div>
 
-        <div class="row 3col">
-          <div>
-            <label>Platformă</label>
-            <select id="platform">
-              <option>IAAI</option>
-              <option>Copart</option>
-            </select>
-          </div>
-          <div>
-            <label>Branch / Oraș</label>
-            <input id="branch" />
-          </div>
-          <div>
-            <label>Stat (US) — 2 litere</label>
-            <input id="state" maxlength="2" />
-          </div>
-        </div>
-      </section>
+    <div class="box">
+      <h2>2) Date costuri</h2>
+      <label>Port de plecare (SUA)</label>
+      <select id="port">
+        <option value="">-- alege port --</option>
+        <option>New Jersey (NJ)</option>
+        <option>Savannah (GA)</option>
+        <option>Houston (TX)</option>
+        <option>Los Angeles (CA)</option>
+        <option>Seattle (WA)</option>
+      </select>
+      <br>
+      <label>Ground USA (USD)</label>
+      <input id="ground" type="number">
+      <br>
+      <label>Delivery to Romania (USD)</label>
+      <input id="delivery" type="number">
+      <br>
+      <label>Bid account (USD)</label>
+      <input id="bid" type="number" value="500">
+      <br>
+      <label>THC + comisar vamal (USD)</label>
+      <input id="thc" type="number" value="180">
+      <br>
+      <label>Comision noi (USD)</label>
+      <input id="comision" type="number" value="1170">
+      <br>
+      <label>Vamă (%)</label>
+      <input id="vama" type="number" value="10">
+    </div>
 
-      <!-- 2) COSTURI -->
-      <section class="card">
-        <h2>2) Date costuri</h2>
+    <div class="box">
+      <h2>Rezultat</h2>
+      <p>Total (USD): <span id="total_usd">0.00</span></p>
+      <p>Total (RON): <span id="total_ron">0.00</span></p>
+      <label>Mesaj pentru client:</label>
+      <textarea id="msg"></textarea>
+      <button id="copy">Copiază mesaj</button>
+    </div>
+  </div>
 
-        <div class="row 2col">
-          <div>
-            <label>Port de plecare (SUA)</label>
-            <select id="port">
-              <option>New Jersey (NJ)</option>
-              <option>Savannah (GA)</option>
-              <option>Houston (TX)</option>
-              <option>Los Angeles (CA)</option>
-              <option>Seattle (WA)</option>
-            </select>
-          </div>
-          <div>
-            <label>Ground USA (USD) — din tabel</label>
-            <input id="ground" inputmode="numeric" />
-          </div>
-        </div>
-
-        <div class="row 3col">
-          <div>
-            <label>Delivery to Romania (USD)</label>
-            <input id="delivery" inputmode="numeric" />
-          </div>
-          <div>
-            <label>Bid account (USD) (implicit 250 + 250)</label>
-            <input id="bidacc" value="500" inputmode="numeric" />
-          </div>
-          <div>
-            <label>THC + comisar vamal (USD)</label>
-            <input id="thc" value="180" inputmode="numeric" />
-          </div>
-        </div>
-
-        <div class="row 3col">
-          <div>
-            <label>Comision noi (USD)</label>
-            <input id="fee" value="1170" inputmode="numeric" />
-          </div>
-          <div>
-            <label>Vamă (%)</label>
-            <input id="duty" value="10" inputmode="numeric" />
-          </div>
-          <div>
-            <label>TVA (%)</label>
-            <input id="vat" value="21" inputmode="numeric" />
-          </div>
-        </div>
-
-        <div class="row">
-          <button id="calc">Calculează</button>
-        </div>
-      </section>
-
-      <!-- 3) REZULTAT -->
-      <section class="card">
-        <h2>Rezultat</h2>
-        <div class="result">
-          <div><strong>Total (USD):</strong> <span id="totalUsd">0.00</span></div>
-          <div><strong>Total (RON):</strong> <span id="totalRon">0.00</span></div>
-        </div>
-        <label>Mesaj pentru client (copiabil):</label>
-        <textarea id="msg" rows="10"></textarea>
-        <button id="copy">Copiază mesaj</button>
-      </section>
-    </main>
-
-    <footer class="footnote">
-      Porturile sunt: Los Angeles (CA), Houston (TX), Savannah (GA), New Jersey (NJ), Seattle (WA).
-      Delivery to Romania: 1500 (Est), 2150 (Vest). Curs fixat la 4.35.
-    </footer>
-
-    <script src="app.js"></script>
-  </body>
+  <script src="app.js"></script>
+</body>
 </html>
