@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <title>Next Auto Green — Calculator PRO</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Next Auto Green — Calculator PRO</h1>
+
+  <div class="container">
+    <div class="form-section">
+      <h2>1) Link licitație & deducere locație</h2>
+      <input type="text" id="auctionLink" placeholder="Link anunț (IAAI / Copart)">
+      <button onclick="preiaLocatia()">Preia locația din link</button>
+
+      <label>Platformă</label>
+      <select id="platform">
+        <option value="IAAI">IAAI</option>
+        <option value="Copart">Copart</option>
+      </select>
+
+      <label>Branch / Oraș</label>
+      <input type="text" id="branch">
+
+      <label>Stat (US)</label>
+      <input type="text" id="state">
+    </div>
+
+    <div class="form-section">
+      <h2>2) Date costuri</h2>
+      <label>Port de plecare (SUA)</label>
+      <select id="port"></select>
+
+      <label>Ground USA (USD)</label>
+      <input type="text" id="ground">
+
+      <label>Delivery to Romania (USD)</label>
+      <input type="text" id="delivery" value="1500">
+    </div>
+
+    <div class="result-section">
+      <h2>Rezultat</h2>
+      <textarea id="result" readonly></textarea>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
