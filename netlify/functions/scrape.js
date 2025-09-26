@@ -1,46 +1,34 @@
 // netlify/functions/scrape.js
-// Folosește fetch nativ (Node 18+) pentru a prelua pagina și a extrage „Selling Branch” / „Location”
 exports.handler = async (event) => {
   try {
     const url = event.queryStringParameters?.url;
-    if (!url) {
-      return respond(400, { error: "Missing url" });
-    }
+    if (!url) return respond(400, { error: "Missing url" });
 
     const res = await fetch(url, {
-      headers: {
-        "user-agent": "Mozilla/5.0 (compatible)",
-      },
+      headers: { "user-agent": "Mozilla/5.0 (compatible)" },
     });
     const html = await res.text();
 
-    let branch = "";
-    let state = "";
+    let branch = "", state = "";
 
-    // 1. IAAI – „Selling Branch” (poate conține spații suplimentare, <span> etc.)
-    const iaai = html.match(
-      /Selling\\s*Branch[^:]*:\\s*([\\w\\s.'-]+?)[\\s<]*\\(\\s*([A-Z]{2})\\s*\\)/i
-    );
-    // 2. Copart – „Location: City, ST” (în diferite formate)
-    const copart = html.match(
-      /Location[^:]*:\\s*([\\w\\s.'-]+?)\\s*,\\s*([A-Z]{2})(?:\\s|<)/i
-    );
+    // IAAI: Selling Branch: City (ST)
+    const iaai = html.match(/Selling\\s*Branch[^:]*:\\s*([\\w\\s.'-]+?)[\\s<]*\\(\\s*([A-Z]{2})\\s*\\)/i);
+    // Copart: Location: City, ST
+    const copart = html.match(/Location[^:]*:\\s*([\\w\\s.'-]+?)\\s*,\\s*([A-Z]{2})(?:\\s|<)/i);
 
     if (iaai) {
       branch = iaai[1].trim().replace(/[\"']/g, "");
-      state = iaai[2].trim().toUpperCase();
+      state  = iaai[2].trim().toUpperCase();
     } else if (copart) {
       branch = copart[1].trim().replace(/[\"']/g, "");
-      state = copart[2].trim().toUpperCase();
+      state  = copart[2].trim().toUpperCase();
     } else {
-      return respond(422, {
-        error: "Nu am putut detecta Branch/State în pagină",
-      });
+      return respond(422, { error: "Nu am putut detecta Branch/State în pagină" });
     }
 
     return respond(200, { branch, state });
-  } catch (error) {
-    return respond(500, { error: error.message });
+  } catch (err) {
+    return respond(500, { error: err.message });
   }
 };
 
