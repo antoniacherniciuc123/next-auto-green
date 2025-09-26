@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Next Auto Green — Calculator PRO</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- pdf.js & worker -->
+  <!-- PDF.js + worker -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js" defer></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -20,7 +20,7 @@
   <div class="wrap">
     <h1>Next Auto Green — Calculator PRO</h1>
     <div class="grid">
-      <!-- Coloana 1 -->
+      <!-- 1) Link licitație -->
       <section class="card">
         <h2>1) Link licitație & deducere locație</h2>
         <label>Link anunţ (IAAI / Copart)
@@ -28,18 +28,26 @@
         </label>
         <div class="row">
           <button id="btnScrape">Preia locaţia din link</button>
-          <label class="btn-like">Încarcă PDF (tabele)
+          <label class="btn-like">
+            Încarcă PDF (tabele)
             <input id="pdfInput" type="file" accept="application/pdf" hidden />
           </label>
         </div>
         <label>Platformă
-          <select id="platform"><option>IAAI</option><option>Copart</option></select>
+          <select id="platform">
+            <option>IAAI</option>
+            <option>Copart</option>
+          </select>
         </label>
-        <label>Branch / Oraş<input id="branch" type="text" placeholder="ex: Syracuse" /></label>
-        <label>Stat (US) — 2 litere<input id="state" type="text" placeholder="ex: NY" maxlength="2" /></label>
+        <label>Branch / Oraş
+          <input id="branch" type="text" placeholder="ex: Syracuse" />
+        </label>
+        <label>Stat (US) — 2 litere
+          <input id="state" type="text" placeholder="ex: NY" maxlength="2" />
+        </label>
         <div class="hint" id="pdfStatus">PDF: neîncărcat</div>
       </section>
-      <!-- Coloana 2 -->
+      <!-- 2) Date costuri -->
       <section class="card">
         <h2>2) Date costuri</h2>
         <label>Port de plecare (SUA)
@@ -52,7 +60,7 @@
             <option value="WA">Seattle (WA)</option>
           </select>
         </label>
-        <!-- Bid între port și ground -->
+        <!-- Bid (USD) între port și ground -->
         <label>Bid (USD)
           <input id="bid" type="number" placeholder="ex: 10000" />
         </label>
@@ -78,7 +86,7 @@
           <input id="vat" type="number" value="21" />
         </label>
       </section>
-      <!-- Coloana 3 -->
+      <!-- 3) Rezultat -->
       <section class="card">
         <h2>Rezultat</h2>
         <div class="totals">
